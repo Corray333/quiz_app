@@ -1,0 +1,54 @@
+{
+    "name": "Test form",
+    "cover":"https://images.unsplash.com/photo-1517673132405-a56a62b18caf?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb",
+    "questions": [
+        {
+            "type": "text",
+            "id":1,
+            "next":2, 
+            "question":{
+                "question": "Who is the most beautiful girl in the observable universe?",
+                "answer": "Maria"
+            }
+        }, 
+        {
+            "type": "select",
+            "id":2,
+            "next":3,
+            "question":{
+                "question": "What is the name of the most perspective startup in Russia?",
+                "options": [
+                    "OsaSoft",
+                    "Otsosoft",
+                    "Esoft"
+                ],
+                "answer": "OsaSoft"
+            }
+        },
+        {
+            "type": "multi_select",
+            "id":3,
+            "next":4,
+            "question":{
+                "question": "Which companies are founded in Russia?",
+                "options": [
+                    "OsaSoft",
+                    "Google",
+                    "Yandex",
+                    "Alfa-Bank"
+                ],
+                "answers": [
+                    "OsaSoft",
+                    "Yandex",
+                    "Alfa-Bank"
+                ]
+            }    
+        },
+        {
+            "type": "file_upload",
+            "id":4,
+            "next":5,
+            "text": "Download your favorite meme"
+        } 
+    ]
+}
