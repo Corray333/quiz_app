@@ -1,23 +1,20 @@
 <script setup lang="ts">
 import QuizCard from '../components/QuizCard.vue'
-import {ref} from 'vue'
+import {Quiz} from '../types/types'
+import {ref, onBeforeMount} from 'vue'
+import axios from 'axios'
 
-const quizzes = ref([
-{
-    id: 1,
-    title: "Набор разработчиков",
-    description: "Анкета для поиска middle android и ios разработчиков",
-    cover: "https://i.pinimg.com/originals/4d/fc/b3/4dfcb3e27740dc3e37ec1fb1f6ac4b1f.jpg",
-    newAnswers: 5
-  },
-  {
-    id: 1,
-    title: "Набор разработчиков",
-    description: "Анкета для поиска middle android и ios разработчиков",
-    cover: "https://i.pinimg.com/originals/4d/fc/b3/4dfcb3e27740dc3e37ec1fb1f6ac4b1f.jpg",
-    newAnswers: 5
+const quizzes = ref<Quiz[]>([])
+
+onBeforeMount(async ()=>{
+  try {
+    let {data} = await axios.get(`${import.meta.env.VITE_API_URL}/quizzes`)
+    quizzes.value = data
+  } catch (error) {
+    
   }
-])
+})
+
 
 </script>
 

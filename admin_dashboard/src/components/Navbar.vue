@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { ref } from 'vue'
 import { Icon } from '@iconify/vue'
 
+const router = useRouter()
 const showModal = ref(false)
 
 </script>
@@ -12,16 +13,16 @@ const showModal = ref(false)
         <section v-if="showModal" @click.self="showModal = false"
             class=" absolute z-50 backdrop-blur-lg w-screen h-screen flex justify-center items-center">
             <section class=" bg-white p-5 shadow-xl rounded-xl flex flex-col w-fit gap-2 ">
-                <button>
+                <button @click="router.push('/create-quiz?type=form'); showModal = false">
                     {{ $t('navbar.newForm') }}
                 </button>
-                <button>
+                <button @click="router.push('/create-quiz?type=quiz'); showModal = false">
                     {{ $t('navbar.newQuiz') }}
                 </button>
             </section>
         </section>
     </Transition>
-    <nav class=" bg-accent rounded-b-xl flex p-2 px-5 justify-between font-bold text-white items-center">
+    <nav class=" fixed w-full top-0 left-0 z-20 bg-accent rounded-b-xl flex p-2 px-5 justify-between font-bold text-white items-center">
         <ul class=" flex gap-5">
             <li>
                 <RouterLink to="/quizzes">{{ $t('navbar.quizzes') }}</RouterLink>
@@ -34,7 +35,7 @@ const showModal = ref(false)
             </li>
         </ul>
         <button @click="showModal = true" class=" p-2 bg-white text-accent rounded-full">
-            <Icon icon="mdi-light:plus" class=" text-xl" />
+            <Icon icon="ph:plus" class=" text-xl" />
         </button>
     </nav>
 </template>

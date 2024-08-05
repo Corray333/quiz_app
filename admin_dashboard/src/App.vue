@@ -7,7 +7,7 @@ import { ref } from 'vue'
 </script>
 
 <template>
-  <section class=" bg-light min-h-screen">
+  <section class=" bg-light min-h-screen pt-14">
     <Navbar />
 
     <RouterView />

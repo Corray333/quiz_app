@@ -1,30 +1,10 @@
 <script lang="ts" setup>
 import { Icon } from '@iconify/vue'
+import { Quiz } from '@/types/types'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-class Quiz{
-    id: number
-    title: string
-    description: string
-    cover: string
-    newAnswers: number
-
-    constructor(
-        id: number,
-        title: string,
-        description: string,
-        cover: string,
-        newAnswers: number
-    ){
-        this.id = id
-        this.title = title
-        this.description = description
-        this.cover = cover
-        this.newAnswers = newAnswers
-    }
-}
 
 defineProps<{
   quiz: Quiz
@@ -37,7 +17,12 @@ defineProps<{
         <img :src="quiz.cover" :alt="quiz.cover" class=" w-full h-32 object-cover rounded-xl">
         <div class="info p-5 w-full flex flex-col gap-5">
             <div class=" w-full flex justify-between">
-                <span class=" bg-white p-2 px-4 flex items-center rounded-full">🔥{{ quiz.newAnswers }} {{ $t("quizCard.newAnswers") }}</span>
+                <span class=" bg-white p-2 px-4 flex items-center rounded-full">
+                    <span v-if="quiz.newAnswers == 0">😐</span>
+                    <span v-else-if="quiz.newAnswers < 3">🤩</span>
+                    <span  v-else-if="quiz.newAnswers >= 3">🔥</span>
+                    {{ quiz.newAnswers }} {{ $t("quizCard.newAnswers") }}
+                </span>
                 <button @click="router.push('/quizzes/'+quiz.id)" class=" text-xl bg-white rounded-full text-accent aspect-square">
                     <Icon icon="ph:pen-light" />
                 </button>
