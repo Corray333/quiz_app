@@ -11,16 +11,50 @@ import (
 )
 
 type CreateQuizRequest struct {
-	Title       string `json:"title" db:"title"`
-	Description string `json:"description,omitempty" db:"description"`
-	CreatedAt   int64  `json:"createdAt" db:"created_at"`
-	Cover       string `json:"cover" db:"cover"`
-	Type        string `json:"type" db:"type"`
+	Title       string            `json:"title" db:"title"`
+	Description string            `json:"description,omitempty" db:"description"`
+	CreatedAt   int64             `json:"createdAt" db:"created_at"`
+	Cover       string            `json:"cover" db:"cover"`
+	Type        string            `json:"type" db:"type"`
+	Questions   []json.RawMessage `json:"questions"`
 }
 
 type CreateQuizResponse struct {
 	ID int64 `json:"id"`
 }
+
+// func (s Server) CreateQuiz() http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+
+// 		var req CreateQuizRequest
+// 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+// 			http.Error(w, err.Error(), http.StatusBadRequest)
+// 			return
+// 		}
+// 		quiz := &types.Quiz{
+// 			Title:       req.Title,
+// 			Description: req.Description,
+// 			CreatedAt:   req.CreatedAt,
+// 			Cover:       req.Cover,
+// 			Type:        req.Type,
+// 		}
+// 		id, err := s.service.CreateQuiz(quiz)
+// 		if err != nil {
+// 			slog.Error("create quiz error: " + err.Error())
+// 			http.Error(w, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+
+// 		if err := json.NewEncoder(w).Encode(CreateQuizResponse{
+// 			ID: id,
+// 		}); err != nil {
+// 			slog.Error("encode response error: " + err.Error())
+// 			http.Error(w, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 	}
+// }
 
 func (s Server) CreateQuiz() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -31,12 +65,14 @@ func (s Server) CreateQuiz() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
 		quiz := &types.Quiz{
 			Title:       req.Title,
 			Description: req.Description,
 			CreatedAt:   req.CreatedAt,
 			Cover:       req.Cover,
 			Type:        req.Type,
+			Questions:   req.Questions,
 		}
 		id, err := s.service.CreateQuiz(quiz)
 		if err != nil {
@@ -173,8 +209,49 @@ func (s Server) GetQuestion() http.HandlerFunc {
 	}
 }
 
-// func ListQuizzes(store Storage) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
+func (s Server) ListQuizzes() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		offsetStr := r.URL.Query().Get("offset")
+		offset, err := strconv.Atoi(offsetStr)
+		if err != nil {
+			offset = 0
+		}
 
-// 	}
-// }
+		quizzes, err := s.service.ListQuizzes(offset)
+		if err != nil {
+			slog.Error("list quizzes error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(quizzes); err != nil {
+			slog.Error("encode response error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) GetQuiz() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		id, err := strconv.ParseInt(chi.URLParam(r, "quiz_id"), 10, 64)
+		if err != nil {
+			slog.Error("get quiz error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		quiz, err := s.service.GetQuiz(id)
+		if err != nil {
+			slog.Error("get quiz error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := json.NewEncoder(w).Encode(quiz); err != nil {
+			slog.Error("encode response error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}

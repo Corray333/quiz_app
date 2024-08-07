@@ -117,14 +117,14 @@ const updateMultiSelectAnswer = (question: Question, id: number, input: HTMLInpu
 }
 
 const createQuiz = async ()=>{
-  console.log(quiz.value)
-  // try {
-  //   await axios.post(`${import.meta.env.VITE_API_URL}/quizzes`)
+  try {
+    await axios.post(`${import.meta.env.VITE_API_URL}/quizzes`, quiz.value)
 
-  //   router.push("/quizzes")
-  // } catch (error) {
-  //   console.log(error)
-  // }
+    router.push("/quizzes")
+  } catch (error) {
+    alert("Не удалось создать квиз(")
+    console.log(error)
+  }
 }
 
 </script>
@@ -143,7 +143,7 @@ const createQuiz = async ()=>{
         <button @click=" showModal = false">
           {{ $t('createQuiz.questionTypes.multiSelectQuestion') }}
         </button>
-        <button @click=" showModal = false">
+        <button @click=" showModal = false">Воо
           {{ $t('createQuiz.questionTypes.fileQuestion') }}
         </button>
       </section>
@@ -157,8 +157,8 @@ const createQuiz = async ()=>{
       </label>
       <img :src="quiz.cover" alt="" class="w-full rounded-xl h-48 object-cover border-white">
     </div>
-    <input type="text" placeholder="Название опроса" class=" w-full bg-transparent font-bold bg-white p-2 rounded-xl">
-    <textarea type="text" placeholder="Описание опроса"
+    <input v-model="quiz.title" type="text" placeholder="Название опроса" class=" w-full bg-transparent font-bold bg-white p-2 rounded-xl">
+    <textarea v-model="quiz.description" type="text" placeholder="Описание опроса"
       class=" w-full bg-transparent bg-white p-2 rounded-xl"></textarea>
 
 

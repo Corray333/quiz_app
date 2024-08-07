@@ -21,6 +21,7 @@ const (
 
 type User struct {
 	ID       int64           `json:"id" db:"user_id"`
+	TgID     int64           `json:"tg_id" db:"tg_id"`
 	Username string          `json:"username" db:"username"`
 	Email    string          `json:"email" db:"email"`
 	Phone    string          `json:"phone" db:"phone"`
@@ -34,12 +35,14 @@ func (u *User) IsAdmin() bool {
 }
 
 type Quiz struct {
-	ID          int64  `json:"id" db:"quiz_id"`
-	Title       string `json:"title" db:"title"`
-	Description string `json:"description,omitempty" db:"description"`
-	CreatedAt   int64  `json:"createdAt" db:"created_at"`
-	Cover       string `json:"cover" db:"cover"`
-	Type        string `json:"type" db:"type"`
+	ID          int64             `json:"id" db:"quiz_id"`
+	Title       string            `json:"title" db:"title"`
+	Description string            `json:"description,omitempty" db:"description"`
+	CreatedAt   int64             `json:"createdAt" db:"created_at"`
+	Cover       string            `json:"cover" db:"cover"`
+	Type        string            `json:"type" db:"type"`
+	NewAnswers  int64             `json:"newAnswers" db:"-"`
+	Questions   []json.RawMessage `json:"questions"`
 }
 
 type Question struct {

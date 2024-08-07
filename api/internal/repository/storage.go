@@ -3,7 +3,6 @@ package repository
 import (
 	"os"
 
-	"github.com/Corray333/quiz/internal/types"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -25,17 +24,4 @@ func New() *repository {
 	return &repository{
 		db: db,
 	}
-}
-
-func (s *repository) UpdateUser(user *types.User) error {
-	return nil
-}
-func (s *repository) CreateUser(user *types.User) error {
-	return nil
-}
-func (s *repository) GetAllUsers() ([]types.User, error) {
-	return nil, nil
-}
-func (s *repository) GetUserByTG(user_id int64) (*types.User, error) {
-	return nil, nil
 }
