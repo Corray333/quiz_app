@@ -11,7 +11,7 @@ const showModal = ref(false)
 <template>
     <Transition>
         <section v-if="showModal" @click.self="showModal = false"
-            class=" absolute z-50 backdrop-blur-lg w-screen h-screen flex justify-center items-center">
+            class=" fixed z-50 backdrop-blur-lg w-screen h-screen flex justify-center items-center">
             <section class=" bg-white p-5 shadow-xl rounded-xl flex flex-col w-fit gap-2 ">
                 <button @click="router.push('/create-quiz?type=form'); showModal = false">
                     {{ $t('navbar.newForm') }}

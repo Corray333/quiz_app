@@ -26,16 +26,16 @@ export abstract class Question {
 }
 
 export class QuestionText extends Question {
-    answer: string
+    answer: string[]
 
     constructor(
         id: number = 0,
         quizID: number = 0,
         type: string = "text",
         question: string = "",
-        answer: string = "",
+        answer: string[] = [""],
         next: number = 0,
-        image: string = "https://avatars.mds.yandex.net/i?id=3078a886623d95405e521288e3f2ad36_l-4422999-images-thumbs&n=13"
+        image: string = ""
     ) {
         super(id, quizID, type, question, next, image)
         this.answer = answer
@@ -43,7 +43,7 @@ export class QuestionText extends Question {
 }
 
 export class QuestionSelect extends Question {
-    answer: string
+    answer: string[]
     options: string[]
 
     constructor(
@@ -52,8 +52,28 @@ export class QuestionSelect extends Question {
         type: string = "select",
         question: string = "",
         next: number = 0,
-        image: string = "https://avatars.mds.yandex.net/i?id=3078a886623d95405e521288e3f2ad36_l-4422999-images-thumbs&n=13",
-        answer: string = "",
+        image: string = "",
+        answer: string[] = [""],
+        options: string[] = ["",""]
+    ) {
+        super(id, quizID, type, question, next, image)
+        this.answer = answer
+        this.options = options
+    }
+}
+
+export class QuestionMultiSelect extends Question {
+    answer: string[]
+    options: string[]
+
+    constructor(
+        id: number = 0,
+        quizID: number = 0,
+        type: string = "multi_select",
+        question: string = "",
+        next: number = 0,
+        image: string = "",
+        answer: string[] = [],
         options: string[] = ["",""]
     ) {
         super(id, quizID, type, question, next, image)
@@ -69,7 +89,7 @@ export class Quiz {
     description: string
     cover: string
     newAnswers: number = 0
-    questoins: Question[]
+    questions: Question[]
 
     constructor(
         id: number,
@@ -78,7 +98,7 @@ export class Quiz {
         description: string,
         cover: string,
         newAnswers: number = 0,
-        questoins: Question[] = []
+        questions: Question[] = []
     ) {
         this.id = id
         this.type = type
@@ -86,6 +106,6 @@ export class Quiz {
         this.description = description
         this.cover = cover
         this.newAnswers = newAnswers
-        this.questoins = questoins
+        this.questions = questions
     }
 }

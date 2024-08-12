@@ -31,6 +31,8 @@ type Service interface {
 	GetQuestion(id int64) (*types.Question, error)
 	ListQuizzes(offset int) ([]types.Quiz, error)
 	GetQuiz(id int64) (*types.Quiz, error)
+	GetAnswers(userID int64, quizID int64) ([]types.Answer, error)
+	GetQuizAnswers(userID int64, quizID int64) ([]types.Answer, error)
 }
 
 type Server struct {

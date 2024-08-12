@@ -18,6 +18,7 @@ func (s *repository) CreateQuiz(quiz *types.Quiz) (int64, error) {
 	if err := res.Scan(&quiz.ID); err != nil {
 		return 0, err
 	}
+	fmt.Println(quiz)
 
 	qid := 0
 	for i := len(quiz.Questions) - 1; i >= 0; i-- {
@@ -45,7 +46,7 @@ func (s *repository) CreateQuiz(quiz *types.Quiz) (int64, error) {
 }
 
 func (s *repository) CreateQuestion(question *types.Question) (int64, error) {
-	res := s.db.QueryRow("INSERT INTO questions (quiz_id, data, type) VALUES ($1, $2, $3) RETURNING question_id", question.QuizID, question.Question, question.Type)
+	res := s.db.QueryRow("INSERT INTO questions (quiz_id, data, type) VALUES ($1, $2, $3) RETURNING question_id", question.QuizID, question.Data, question.Type)
 	if err := res.Scan(&question.ID); err != nil {
 		return 0, err
 	}
@@ -85,4 +86,118 @@ func (s *repository) GetQuiz(id int64) (*types.Quiz, error) {
 		return nil, err
 	}
 	return quiz, nil
+}
+
+func (s *repository) GetFirstQuestion(quizID int64) (types.IQuestion, error) {
+	req := &types.Question{}
+	err := s.db.Get(req, `
+	SELECT q1.*
+	FROM questions q1
+	LEFT JOIN questions q2 ON q1.question_id = q2.next_question_id
+	WHERE q2.next_question_id IS NULL AND q1.quiz_id = $1
+	`, quizID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result types.IQuestion
+
+	switch req.Type {
+	case types.QuestionTypeText:
+		question := &types.QuestionText{}
+		if err := json.Unmarshal(req.Data, question); err != nil {
+			return nil, err
+		}
+		question.QuizID = req.QuizID
+		question.Type = req.Type
+		question.ID = req.ID
+		question.Next = req.Next
+		result = question
+	case types.QuestionTypeSelect:
+		question := &types.QuestionSelect{}
+		if err := json.Unmarshal(req.Data, question); err != nil {
+			return nil, err
+		}
+		question.QuizID = req.QuizID
+		question.Type = req.Type
+		question.ID = req.ID
+		question.Next = req.Next
+		result = question
+	case types.QuestionTypeMultiSelect:
+		question := &types.QuestionMultiSelect{}
+		if err := json.Unmarshal(req.Data, question); err != nil {
+			return nil, err
+		}
+		question.QuizID = req.QuizID
+		question.Type = req.Type
+		question.ID = req.ID
+		question.Next = req.Next
+		result = question
+	}
+
+	return result, nil
+}
+
+func (s *repository) GetAnswers(userID int64, quizID int64) ([]types.Answer, error) {
+	answers := []types.Answer{}
+	if err := s.db.Select(&answers, "SELECT question_id, user_id, answer, checked FROM answers NATURAL JOIN questions WHERE user_id = $1 AND quiz_id = $2", userID, quizID); err != nil {
+		return nil, fmt.Errorf("error getting answers: %v", err)
+	}
+	for i := range answers {
+		if err := json.Unmarshal(answers[i].AnswerRaw, &answers[i].Answer); err != nil {
+			return nil, fmt.Errorf("error unmarshalling answer: %v", err)
+		}
+		answers[i].AnswerRaw = nil
+		answers[i].Correct = nil
+	}
+	return answers, nil
+}
+
+func (s *repository) GetAllAnswers(quizID int64, offset int) ([]types.Answer, error) {
+	answers := []types.Answer{}
+	if err := s.db.Select(&answers, `SELECT * FROM answers
+		JOIN questions ON answers.question_id = questions.question_id
+		WHERE questions.quiz_id = $1
+		ORDER BY checked, answers.user_id, questions.question_id DESC LIMIT 50 OFFSET $2`, quizID, offset); err != nil {
+		return nil, fmt.Errorf("error getting answers: %v", err)
+	}
+	for i := range answers {
+		if err := json.Unmarshal(answers[i].AnswerRaw, &answers[i].Answer); err != nil {
+			return nil, fmt.Errorf("error unmarshalling answer: %v", err)
+		}
+		answers[i].AnswerRaw = nil
+		answers[i].Correct = nil
+	}
+	return answers, nil
+}
+
+func (s *repository) GetQuizAnswers(userID int64, quizID int64) ([]types.Answer, error) {
+	answers := []types.Answer{}
+	if err := s.db.Select(&answers, "SELECT question_id, user_id, answer, checked FROM answers NATURAL JOIN questions WHERE user_id = $1 AND quiz_id = $2", userID, quizID); err != nil {
+		return nil, fmt.Errorf("error getting answers: %v", err)
+	}
+	questions := []types.Question{}
+	if err := s.db.Select(&questions, "SELECT question_id, data FROM questions WHERE quiz_id = $1", quizID); err != nil {
+		return nil, fmt.Errorf("error getting correct answers: %v", err)
+	}
+
+	for i := range answers {
+		if err := json.Unmarshal(answers[i].AnswerRaw, &answers[i].Answer); err != nil {
+			return nil, fmt.Errorf("error unmarshalling answer: %v", err)
+		}
+
+		for _, question := range questions {
+			if question.ID == answers[i].QuestionID {
+				correct := struct {
+					Answer []string `json:"answer"`
+				}{}
+				if err := json.Unmarshal(question.Data, &correct); err != nil {
+					return nil, fmt.Errorf("error unmarshalling correct answer: %v", err)
+				}
+				answers[i].Correct = correct.Answer
+				answers[i].AnswerRaw = nil
+			}
+		}
+	}
+	return answers, nil
 }

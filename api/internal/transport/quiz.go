@@ -133,9 +133,9 @@ func (s Server) CreateQuestion() http.HandlerFunc {
 		// TODO: add better validation
 
 		question := &types.Question{
-			Type:     req.Type,
-			QuizID:   quizID,
-			Question: req.Question,
+			Type:   req.Type,
+			QuizID: quizID,
+			Data:   req.Question,
 		}
 
 		// switch req.Type {
@@ -255,3 +255,16 @@ func (s Server) GetQuiz() http.HandlerFunc {
 		}
 	}
 }
+
+// func (s Server) GetAnswers() http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		id, err := strconv.ParseInt(chi.URLParam(r, "quiz_id"), 10, 64)
+// 		if err != nil {
+// 			slog.Error("get answers error: " + err.Error())
+// 			http.Error(w, err.Error(), http.StatusBadRequest)
+// 			return
+// 		}
+// 		answers, err := s.service.GetAllAnswers()
+// 	}
+// }

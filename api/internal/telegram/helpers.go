@@ -11,7 +11,7 @@ const (
 	MARK_CHAT_ID = 377742748
 )
 
-func (tg *TelegramClient) HandleError(err string, args ...any) {
+func (tg *TelegramClient) HandleError(err string, userID int64, args ...any) {
 	if len(args)%2 == 1 {
 		args = args[:len(args)-1]
 	}
@@ -23,5 +23,12 @@ func (tg *TelegramClient) HandleError(err string, args ...any) {
 	msg := tgbotapi.NewMessage(MARK_CHAT_ID, err)
 	if _, err := tg.bot.Send(msg); err != nil {
 		slog.Error("error while handling error: "+err.Error(), "error", err)
+	}
+
+	if userID != 0 {
+		msg = tgbotapi.NewMessage(userID, tg.messages[MsgError])
+		if _, err := tg.bot.Send(msg); err != nil {
+			slog.Error("error while handling error: "+err.Error(), "error", err)
+		}
 	}
 }
