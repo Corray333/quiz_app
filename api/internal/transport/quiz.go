@@ -256,15 +256,37 @@ func (s Server) GetQuiz() http.HandlerFunc {
 	}
 }
 
-// func (s Server) GetAnswers() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		w.Header().Set("Content-Type", "application/json")
-// 		id, err := strconv.ParseInt(chi.URLParam(r, "quiz_id"), 10, 64)
-// 		if err != nil {
-// 			slog.Error("get answers error: " + err.Error())
-// 			http.Error(w, err.Error(), http.StatusBadRequest)
-// 			return
-// 		}
-// 		answers, err := s.service.GetAllAnswers()
-// 	}
-// }
+func (s Server) GetAnswers() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		id, err := strconv.ParseInt(chi.URLParam(r, "quiz_id"), 10, 64)
+		if err != nil {
+			slog.Error("get answers error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		offsetStr := r.URL.Query().Get("offset")
+		offset := 0
+		if offsetStr != "" {
+			offset, err = strconv.Atoi(offsetStr)
+		}
+		if err != nil {
+			slog.Error("get answers error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		answers, err := s.service.GetAllAnswers(id, offset)
+		if err != nil {
+			slog.Error("get answers error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(answers); err != nil {
+			slog.Error("encode response error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}

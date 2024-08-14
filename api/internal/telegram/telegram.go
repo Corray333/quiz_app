@@ -54,7 +54,7 @@ type Service interface {
 	GetCurrentQuestion(uid int64) (types.IQuestion, error)
 	GetNextQuestion(uid int64) (types.IQuestion, error)
 	GetAnswers(userID int64, quizID int64) ([]types.Answer, error)
-	GetQuizAnswers(userID int64, quizID int64) ([]types.Answer, error)
+	GetQuizAnswers(userID int64) ([]types.Answer, error)
 }
 
 func NewClient(token string, service Service) *TelegramClient {
@@ -316,10 +316,13 @@ func (tg *TelegramClient) handleNewAnswer(user *types.User, update *tgbotapi.Upd
 		}
 	}
 
-	if question.GetNext() == nil {
-		fmt.Println(question)
-		fmt.Println(user)
-		answers, err := tg.service.GetQuizAnswers(user.ID, question.GetQuizID())
+	question, err = tg.service.GetNextQuestion(user.ID)
+	if err != nil {
+		tg.HandleError("error while getting next question: "+err.Error(), chatID, "chat_id", chatID, "update_id", update.UpdateID)
+		return
+	}
+	if question.GetID() == 0 {
+		answers, err := tg.service.GetQuizAnswers(user.ID)
 		if err != nil {
 			tg.HandleError("error while getting answers: "+err.Error(), chatID, "chat_id", chatID, "update_id", update.UpdateID)
 			return
@@ -331,11 +334,6 @@ func (tg *TelegramClient) handleNewAnswer(user *types.User, update *tgbotapi.Upd
 			tg.HandleError("error while sending message: "+err.Error(), chatID, "chat_id", chatID, "update_id", update.UpdateID)
 			return
 		}
-		return
-	}
-	question, err = tg.service.GetNextQuestion(user.ID)
-	if err != nil {
-		tg.HandleError("error while getting next question: "+err.Error(), chatID, "chat_id", chatID, "update_id", update.UpdateID)
 		return
 	}
 	tg.sendQuestion(question, user.ID, chatID)
@@ -427,26 +425,21 @@ func generateQuizCompletionMessage(answers []types.Answer) string {
 	fmt.Println(answers)
 	result := "Отлично, квиз пройден. Вот твои результаты:\n\n"
 	for _, answer := range answers {
-		isCorrect := true
-		for _, v := range answer.Answer {
-			if !slices.Contains(answer.Correct, v) {
-				isCorrect = false
-				break
-			}
-		}
-		if len(answer.Answer) != len(answer.Correct) {
-			isCorrect = false
-			break
-		}
 
-		result += fmt.Sprintf("Ответ: %s\n", answer.Answer)
+		your := ""
+		for _, v := range answer.Answer {
+			your += fmt.Sprintf("%s,", v)
+		}
+		your = your[:len(your)-1]
+
+		result += fmt.Sprintf("Ваш ответ: %s\n", your)
 		correct := ""
 		for _, v := range answer.Correct {
 			correct += fmt.Sprintf("%s,", v)
 		}
 		correct = correct[:len(correct)-1]
 		result += fmt.Sprintf("Правильный ответ: %s\n", correct)
-		if isCorrect {
+		if answer.IsCorrect {
 			result += fmt.Sprintf("Ответ верный✅\n\n")
 		} else {
 			result += fmt.Sprintf("Ответ неверный❌\n\n")

@@ -50,8 +50,8 @@ type Question struct {
 	Type   string          `json:"type" db:"type"`
 	QuizID int64           `json:"quiz_id" db:"quiz_id"`
 	ID     int64           `json:"id" db:"question_id"`
-	Next   *int64          `json:"next"  db:"next_question_id"`
 	Data   json.RawMessage `json:"question" db:"data"`
+	Number int             `json:"number" db:"question_number"`
 }
 
 type IQuestion interface {

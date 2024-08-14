@@ -30,7 +30,8 @@ type Storage interface {
 	GetCurrentQuestion(uid int64) (types.IQuestion, error)
 	GetNextQuestion(uid int64) (types.IQuestion, error)
 	GetAnswers(userID int64, quizID int64) ([]types.Answer, error)
-	GetQuizAnswers(userID int64, quizID int64) ([]types.Answer, error)
+	GetQuizAnswers(userID int64) ([]types.Answer, error)
+	GetAllAnswers(quizID int64, offset int) ([]types.Answer, error)
 }
 
 type service struct {

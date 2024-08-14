@@ -125,7 +125,18 @@ const updateSelectAnswer = (question: Question, id: number) => {
 }
 
 const updateMultiSelectAnswer = (question: Question, id: number, input: HTMLInputElement) => {
-  console.log(input.checked)
+  let q = question as QuestionMultiSelect
+  const option = q.options[id]; // Assuming options are stored in an array and you want to update based on the id
+  if (input.checked) {
+    if (!q.answer.includes(option)) {
+      q.answer.push(option);
+    }
+  } else {
+    const index = q.answer.indexOf(option);
+    if (index !== -1) {
+      q.answer.splice(index, 1);
+    }
+  }
 }
 
 const createQuiz = async () => {

@@ -32,7 +32,8 @@ type Service interface {
 	ListQuizzes(offset int) ([]types.Quiz, error)
 	GetQuiz(id int64) (*types.Quiz, error)
 	GetAnswers(userID int64, quizID int64) ([]types.Answer, error)
-	GetQuizAnswers(userID int64, quizID int64) ([]types.Answer, error)
+	GetQuizAnswers(userID int64) ([]types.Answer, error)
+	GetAllAnswers(quiz_id int64, offset int) ([][]types.Answer, error)
 }
 
 type Server struct {
@@ -64,6 +65,7 @@ func NewServer(service Service) *Server {
 	router.Post("/api/quizzes/{quiz_id}/questions", server.CreateQuestion())
 	router.Get("/api/questions/{quiz_id}", server.GetQuestion())
 	router.Get("/api/quizzes", server.ListQuizzes())
+	router.Get("/api/quizzes/{quiz_id}/answers", server.GetAnswers())
 	router.Get("/api/quizzes/{quiz_id}", server.GetQuiz())
 	router.Post("/api/upload/image", server.UploadImage())
 

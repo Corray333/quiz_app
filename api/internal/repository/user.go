@@ -52,7 +52,6 @@ func (s *repository) GetCurrentQuestion(uid int64) (types.IQuestion, error) {
 		question.QuizID = req.QuizID
 		question.Type = req.Type
 		question.ID = req.ID
-		question.Next = req.Next
 		result = question
 	case types.QuestionTypeSelect:
 		question := &types.QuestionSelect{}
@@ -62,7 +61,6 @@ func (s *repository) GetCurrentQuestion(uid int64) (types.IQuestion, error) {
 		question.QuizID = req.QuizID
 		question.Type = req.Type
 		question.ID = req.ID
-		question.Next = req.Next
 		result = question
 	case types.QuestionTypeMultiSelect:
 		question := &types.QuestionMultiSelect{}
@@ -72,7 +70,6 @@ func (s *repository) GetCurrentQuestion(uid int64) (types.IQuestion, error) {
 		question.QuizID = req.QuizID
 		question.Type = req.Type
 		question.ID = req.ID
-		question.Next = req.Next
 		result = question
 	}
 
@@ -139,7 +136,17 @@ func (s *repository) SetAnswer(newAnswer *types.Answer) (*types.Answer, error) {
 
 func (r repository) GetNextQuestion(uid int64) (types.IQuestion, error) {
 	req := &types.Question{}
-	if err := r.db.Get(req, "SELECT * FROM questions WHERE question_id = (SELECT next_question_id FROM questions WHERE question_id = (SELECT current_question FROM users WHERE user_id = $1))", uid); err != nil {
+	if err := r.db.Get(req, `WITH current AS (
+			SELECT quiz_id, question_number
+			FROM questions
+			WHERE question_id = (SELECT current_question FROM users WHERE user_id = $1)
+		)
+		SELECT q.quiz_id, q.question_id, q.type, q.data, q.question_number
+		FROM questions q
+		JOIN current c ON q.quiz_id = c.quiz_id AND q.question_number = c.question_number + 1`, uid); err != nil {
+		if err == sql.ErrNoRows {
+			return &types.QuestionBase{ID: 0}, nil
+		}
 		return nil, err
 	}
 
@@ -154,7 +161,6 @@ func (r repository) GetNextQuestion(uid int64) (types.IQuestion, error) {
 		question.QuizID = req.QuizID
 		question.Type = req.Type
 		question.ID = req.ID
-		question.Next = req.Next
 		result = question
 	case types.QuestionTypeSelect:
 		question := &types.QuestionSelect{}
@@ -164,7 +170,6 @@ func (r repository) GetNextQuestion(uid int64) (types.IQuestion, error) {
 		question.QuizID = req.QuizID
 		question.Type = req.Type
 		question.ID = req.ID
-		question.Next = req.Next
 		result = question
 	case types.QuestionTypeMultiSelect:
 		question := &types.QuestionMultiSelect{}
@@ -174,7 +179,6 @@ func (r repository) GetNextQuestion(uid int64) (types.IQuestion, error) {
 		question.QuizID = req.QuizID
 		question.Type = req.Type
 		question.ID = req.ID
-		question.Next = req.Next
 		result = question
 	}
 

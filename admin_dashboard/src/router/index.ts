@@ -9,8 +9,13 @@ const router = createRouter({
       name: 'quizzes',
       component: () => import('../views/QuizzesView.vue')
     },
+    // {
+    //   path: '/answers',
+    //   name: 'answers',
+    //   component: () => import('../views/AnswersView.vue')
+    // },
     {
-      path: '/answers',
+      path: '/quizzes/:quiz_id/answers',
       name: 'answers',
       component: () => import('../views/AnswersView.vue')
     },

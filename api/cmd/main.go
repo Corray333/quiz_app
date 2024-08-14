@@ -11,15 +11,14 @@ func main() {
 
 	config.MustInit(os.Args[1])
 	// repo := repository.New()
-	// t, _ := repo.GetQuizAnswers(1, 16)
-	// fmt.Printf("%+v\n", t)
-	// fmt.Println(repo.SetAnswer(
-	// 	&types.Answer{
-	// 		UserID:     1,
-	// 		QuestionID: 13,
-	// 		Answer:     []string{"Test", "Jopa"},
-	// 	},
-	// ))
+	// s := service.NewService(repo)
+	// t, err := s.GetAllAnswers(19, 0)
+	// fmt.Println(err)
+	// for _, ans := range t {
+	// 	fmt.Printf("%+v\n", ans)
+	// 	fmt.Println()
+	// }
+	// fmt.Println(generateQuizCompletionMessage(t))
 
 	// q, _ := repo.GetFirstQuestion(14)
 	// switch q.(type) {
