@@ -191,9 +191,9 @@ const showCoverImageUrlModal = ref<boolean>(false)
         <button @click="quiz.questions?.push(new QuestionMultiSelect()); showModal = false">
           {{ $t('createQuiz.questionTypes.multiSelectQuestion') }}
         </button>
-        <button @click=" showModal = false">Воо
+        <!-- <button @click=" showModal = false">
           {{ $t('createQuiz.questionTypes.fileQuestion') }}
-        </button>
+        </button> -->
       </section>
     </section>
   </Transition>

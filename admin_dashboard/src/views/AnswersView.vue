@@ -10,6 +10,7 @@ class Answer {
   correct: string[] = []
   isCorrect: boolean = true
   checked: boolean = true
+  question: string = ""
 }
 
 const answers = ref<Answer[][]>()
@@ -35,8 +36,9 @@ onBeforeMount(()=>{
   <section class="p-5 flex flex-col gap-5">
     <article v-for="(answerRow, i) of answers" :key="i" class=" bg-half_light p-2 flex flex-col gap-2 rounded-xl shadow-xl" :class="answerRow[0].checked ? '':'new'">
       <div v-for="(answer, j) of answerRow" :key="j" class=" p-2 rounded-md ">
-        <p class="flex gap-2"><p v-if="answer.correct">✅</p><p v-else>❌</p>Ответ пользователя: {{ answer.answer }}</p>
-        <p v-if="!answer.correct">Правильный ответ: {{ answer.correct }}</p>
+        <p>{{ answer.question }}</p>
+        <p class="flex gap-2"><p v-if="answer.isCorrect">✅</p><p v-else>❌</p>{{ answer.answer.join(", ")}}</p>
+        <p v-if="!answer.isCorrect">Правильный ответ: {{ answer.correct.join(", ") }}</p>
       </div>
     </article>
   </section>

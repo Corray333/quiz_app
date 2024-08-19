@@ -40,6 +40,43 @@ func (s *repository) CreateQuiz(quiz *types.Quiz) (int64, error) {
 	return quiz.ID, tx.Commit()
 }
 
+func (s *repository) UpdateQuiz(quiz *types.Quiz) error {
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return fmt.Errorf("transaction failed: %w", err)
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec("UPDATE quizzes SET title = $1, description = $2, cover = $3, type = $4 WHERE quiz_id = $5", quiz.Title, quiz.Description, quiz.Cover, quiz.Type, quiz.ID); err != nil {
+		return fmt.Errorf("error updating quiz: %w", err)
+	}
+
+	for i := 0; i < len(quiz.Questions); i++ {
+		qtype := struct {
+			ID   int64  `json:"id"`
+			Type string `json:"type"`
+		}{}
+
+		if err := json.Unmarshal([]byte(quiz.Questions[i]), &qtype); err != nil {
+			return fmt.Errorf("error unmarshalling question id and type: %w", err)
+		}
+
+		if qtype.ID == 0 {
+			_, err := tx.Exec("INSERT INTO questions (quiz_id, data, type, question_number) VALUES ($1, $2, $3, $4) RETURNING question_id", quiz.ID, quiz.Questions[i], qtype.Type, i+1)
+			if err != nil {
+				return fmt.Errorf("error inserting question: %w", err)
+			}
+		} else {
+			if _, err := tx.Exec("UPDATE questions SET data = $1 WHERE question_id = $2", quiz.Questions[i], qtype.ID); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return tx.Commit()
+
+}
+
 func (s *repository) CreateQuestion(question *types.Question) (int64, error) {
 	res := s.db.QueryRow("INSERT INTO questions (quiz_id, data, type) VALUES ($1, $2, $3) RETURNING question_id", question.QuizID, question.Data, question.Type)
 	if err := res.Scan(&question.ID); err != nil {
@@ -70,16 +107,58 @@ func (s *repository) ListQuizzes(offset int) ([]types.Quiz, error) {
 func (s *repository) GetQuiz(id int64) (*types.Quiz, error) {
 	quiz := &types.Quiz{}
 	err := s.db.Get(quiz, `
-	SELECT q.quiz_id, q.title, q.description, q.created_at, q.cover, q.type, COUNT(a.question_id) AS new_answers
-	FROM quizzes q
-	LEFT JOIN questions qst ON q.quiz_id = qst.quiz_id
-	LEFT JOIN answers a ON qst.question_id = a.question_id AND a.checked = false
-	WHERE qst.question_number = 1 AND q.quiz_id = $1
-	GROUP BY q.quiz_id
+	SELECT q.quiz_id, q.title, q.description, q.created_at, q.cover, q.type
+	FROM quizzes q WHERE q.quiz_id = $1
 	`, id)
 	if err != nil {
 		return nil, err
 	}
+
+	questions := []types.Question{}
+	if err := s.db.Select(&questions, `SELECT * FROM questions WHERE quiz_id = $1 ORDER BY question_number`, quiz.ID); err != nil {
+		return nil, err
+	}
+	for i := range questions {
+		req := questions[i]
+		var result types.IQuestion
+		switch req.Type {
+		case types.QuestionTypeText:
+			question := &types.QuestionText{}
+			if err := json.Unmarshal(req.Data, question); err != nil {
+				return nil, err
+			}
+			question.QuizID = req.QuizID
+			question.Type = req.Type
+			question.ID = req.ID
+			result = question
+		case types.QuestionTypeSelect:
+			question := &types.QuestionSelect{}
+			if err := json.Unmarshal(req.Data, question); err != nil {
+				return nil, err
+			}
+			question.QuizID = req.QuizID
+			question.Type = req.Type
+			question.ID = req.ID
+			result = question
+		case types.QuestionTypeMultiSelect:
+			question := &types.QuestionMultiSelect{}
+			if err := json.Unmarshal(req.Data, question); err != nil {
+				return nil, err
+			}
+			question.QuizID = req.QuizID
+			question.Type = req.Type
+			question.ID = req.ID
+			result = question
+		}
+
+		marshalled, err := json.Marshal(result)
+		if err != nil {
+			return nil, err
+		}
+
+		quiz.Questions = append(quiz.Questions, marshalled)
+	}
+
 	return quiz, nil
 }
 
@@ -145,7 +224,12 @@ func (s *repository) GetAnswers(userID int64, quizID int64) ([]types.Answer, err
 	return answers, nil
 }
 
-func (s *repository) GetAllAnswers(quizID int64, offset int) ([]types.Answer, error) {
+func (s *repository) GetQuizAnswers(quizID int64, offset int) ([]types.Answer, error) {
+	quiz, err := s.GetQuiz(quizID)
+	if err != nil {
+		return nil, err
+	}
+
 	answers := []types.Answer{}
 	if err := s.db.Select(&answers, `SELECT questions.question_id, user_id, answer, checked FROM answers
 	JOIN questions ON answers.question_id = questions.question_id
@@ -169,7 +253,8 @@ func (s *repository) GetAllAnswers(quizID int64, offset int) ([]types.Answer, er
 		for _, question := range questions {
 			if question.ID == answers[i].QuestionID {
 				correct := struct {
-					Answer []string `json:"answer"`
+					Question string   `json:"question"`
+					Answer   []string `json:"answer"`
 				}{}
 				if err := json.Unmarshal(question.Data, &correct); err != nil {
 					return nil, fmt.Errorf("error unmarshalling correct answer: %v", err)
@@ -177,12 +262,20 @@ func (s *repository) GetAllAnswers(quizID int64, offset int) ([]types.Answer, er
 				answers[i].Correct = correct.Answer
 				answers[i].IsCorrect = answerIsCorrect(answers[i].Answer, correct.Answer)
 				answers[i].AnswerRaw = nil
+				answers[i].Question = correct.Question
 			}
 		}
+
 		answers[i].AnswerRaw = nil
 	}
 	tx, err := s.db.Beginx()
 	defer tx.Rollback()
+
+	if quiz.Type == types.QuizTypeForm {
+		for i := range answers {
+			answers[i].IsCorrect = true
+		}
+	}
 
 	if err != nil {
 		return nil, fmt.Errorf("error starting transaction: %v", err)
@@ -217,7 +310,7 @@ func answerIsCorrect(answer, correct []string) bool {
 	return true
 }
 
-func (s *repository) GetQuizAnswers(userID int64) ([]types.Answer, error) {
+func (s *repository) GetUserAnswers(userID int64) ([]types.Answer, error) {
 
 	quizID := 0
 

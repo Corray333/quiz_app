@@ -5,6 +5,7 @@ export abstract class Question {
     question: string
     next: number
     image: string
+    answer: string[] = [""]
 
 
     constructor(

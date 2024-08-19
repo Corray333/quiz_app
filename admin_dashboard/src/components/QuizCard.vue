@@ -29,7 +29,7 @@ defineProps<{
             </div>
             <div>
                 <h3>{{ quiz.title }}</h3>
-                <p>{{ quiz.description }}</p>
+                <p class=" text-wrap line-clamp-3">{{ quiz.description }}</p>
             </div>
         </div>
     </article>

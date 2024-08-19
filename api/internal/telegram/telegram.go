@@ -54,7 +54,8 @@ type Service interface {
 	GetCurrentQuestion(uid int64) (types.IQuestion, error)
 	GetNextQuestion(uid int64) (types.IQuestion, error)
 	GetAnswers(userID int64, quizID int64) ([]types.Answer, error)
-	GetQuizAnswers(userID int64) ([]types.Answer, error)
+	GetUserAnswers(userID int64) ([]types.Answer, error)
+	GetAnswer(uid, qid int64) (*types.Answer, error)
 }
 
 func NewClient(token string, service Service) *TelegramClient {
@@ -155,7 +156,6 @@ func (tg *TelegramClient) welcomeToQuiz(user *types.User, update *tgbotapi.Updat
 	uid := user.ID
 	quizID, err := strconv.ParseInt(update.Message.CommandArguments(), 10, 64)
 	if err != nil {
-		tg.HandleError("error while parsing quiz id: "+err.Error(), chatID, "chat_id", chatID)
 		return
 	}
 	quiz, err := tg.service.GetQuiz(quizID)
@@ -177,9 +177,7 @@ func (tg *TelegramClient) welcomeToQuiz(user *types.User, update *tgbotapi.Updat
 		tg.HandleError("error while getting first question: "+err.Error(), chatID, "chat_id", chatID)
 		return
 	}
-	fmt.Println()
-	fmt.Println(fmt.Sprintf("%+v\n", user))
-	fmt.Println()
+	fmt.Println(fmt.Sprintf("User: %+v\n", user))
 	if err := tg.service.SetCurrentQuestion(uid, question.GetID()); err != nil {
 		tg.HandleError("error while setting current question: "+err.Error(), chatID, "chat_id", chatID)
 		return
@@ -187,9 +185,8 @@ func (tg *TelegramClient) welcomeToQuiz(user *types.User, update *tgbotapi.Updat
 
 	var firstQuestion tgbotapi.Chattable
 
-	switch question.(type) {
+	switch q := question.(type) {
 	case *types.QuestionText:
-		q := question.(*types.QuestionText)
 		if q.Image != "" {
 			photo := tgbotapi.NewPhoto(chatID, tgbotapi.FileURL(q.Image))
 			photo.ParseMode = "Markdown"
@@ -200,7 +197,79 @@ func (tg *TelegramClient) welcomeToQuiz(user *types.User, update *tgbotapi.Updat
 			msg.ParseMode = "Markdown"
 			firstQuestion = msg
 		}
+	case *types.QuestionSelect:
+		if q.Image != "" {
+			photo := tgbotapi.NewPhoto(chatID, tgbotapi.FileURL(q.Image))
+			photo.ParseMode = "Markdown"
+			photo.Caption = q.Question
+			markup := tgbotapi.InlineKeyboardMarkup{}
+			for _, opt := range q.Options {
+				fmt.Println(opt)
+				btn := tgbotapi.NewInlineKeyboardButtonData(opt, opt)
+				markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{btn})
+			}
+			photo.ReplyMarkup = &markup
+			firstQuestion = photo
+		} else {
+			msg := tgbotapi.NewMessage(chatID, q.Question)
+			msg.ParseMode = "Markdown"
+			markup := tgbotapi.InlineKeyboardMarkup{}
+			for _, opt := range q.Options {
+				fmt.Println(opt)
+				btn := tgbotapi.NewInlineKeyboardButtonData(opt, opt)
+				markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{btn})
+			}
+			msg.ReplyMarkup = &markup
+			firstQuestion = msg
+		}
+	case *types.QuestionMultiSelect:
+		if q.Image != "" {
+			photo := tgbotapi.NewPhoto(chatID, tgbotapi.FileURL(q.Image))
+			photo.ParseMode = "Markdown"
+			photo.Caption = q.Question
+			markup := tgbotapi.InlineKeyboardMarkup{}
 
+			answer, err := tg.service.GetAnswer(uid, question.GetID())
+			if err != nil {
+				tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
+				return
+			}
+
+			for _, opt := range q.Options {
+				text := opt
+				if slices.Contains(answer.Answer, opt) {
+					text = "✅" + text
+				}
+				btn := tgbotapi.NewInlineKeyboardButtonData(text, opt)
+				markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{btn})
+			}
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData("Дать ответ", "Следующий вопрос➡")})
+			photo.ReplyMarkup = &markup
+			firstQuestion = photo
+		} else {
+			msg := tgbotapi.NewMessage(chatID, q.Question)
+			msg.ParseMode = "Markdown"
+			markup := tgbotapi.InlineKeyboardMarkup{}
+
+			answer, err := tg.service.GetAnswer(uid, question.GetID())
+			if err != nil {
+				tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
+				return
+			}
+
+			for _, opt := range q.Options {
+				text := opt
+				if slices.Contains(answer.Answer, opt) {
+					text = "✅" + text
+				}
+				btn := tgbotapi.NewInlineKeyboardButtonData(text, opt)
+				markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{btn})
+			}
+
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData("Дать ответ", "Следующий вопрос➡")})
+			msg.ReplyMarkup = &markup
+			firstQuestion = msg
+		}
 	}
 
 	msgText := fmt.Sprintf(tg.messages[MsgWelcomeToQuiz], quiz.Title, quiz.Description)
@@ -276,6 +345,10 @@ func (tg *TelegramClient) handleNewAnswer(user *types.User, update *tgbotapi.Upd
 		// 	Answer:     []string{update.Message.Document.FileID},
 		// }
 
+	} else if update.CallbackQuery != nil && update.CallbackData() == "Следующий вопрос➡" {
+
+	} else {
+		return
 	}
 
 	fmt.Println("Setting answer: ", answer)
@@ -287,7 +360,7 @@ func (tg *TelegramClient) handleNewAnswer(user *types.User, update *tgbotapi.Upd
 		}
 	}
 
-	if question.GetType() == types.QuestionTypeMultiSelect && update.CallbackData() != "Следующий вопрос➡" {
+	if question.GetType() == types.QuestionTypeMultiSelect && update.CallbackQuery != nil && update.CallbackData() != "Следующий вопрос➡" {
 		markup := [][]tgbotapi.InlineKeyboardButton{}
 		q := question.(*types.QuestionMultiSelect)
 		fmt.Println("Multi select answer: ", answer)
@@ -307,7 +380,7 @@ func (tg *TelegramClient) handleNewAnswer(user *types.User, update *tgbotapi.Upd
 		}
 		return
 	}
-	if question.GetType() == types.QuestionTypeMultiSelect && update.CallbackData() == "Следующий вопрос➡" {
+	if question.GetType() == types.QuestionTypeMultiSelect && update.CallbackQuery != nil && update.CallbackData() == "Следующий вопрос➡" {
 		markup := [][]tgbotapi.InlineKeyboardButton{}
 		edit := tgbotapi.NewEditMessageReplyMarkup(update.FromChat().ID, update.CallbackQuery.Message.MessageID, tgbotapi.InlineKeyboardMarkup{InlineKeyboard: markup})
 		if _, err := tg.bot.Request(edit); err != nil {
@@ -316,18 +389,25 @@ func (tg *TelegramClient) handleNewAnswer(user *types.User, update *tgbotapi.Upd
 		}
 	}
 
+	quizID := question.GetQuizID()
+
 	question, err = tg.service.GetNextQuestion(user.ID)
 	if err != nil {
 		tg.HandleError("error while getting next question: "+err.Error(), chatID, "chat_id", chatID, "update_id", update.UpdateID)
 		return
 	}
 	if question.GetID() == 0 {
-		answers, err := tg.service.GetQuizAnswers(user.ID)
+		answers, err := tg.service.GetUserAnswers(user.ID)
 		if err != nil {
 			tg.HandleError("error while getting answers: "+err.Error(), chatID, "chat_id", chatID, "update_id", update.UpdateID)
 			return
 		}
-		msgText := generateQuizCompletionMessage(answers)
+		quiz, err := tg.service.GetQuiz(quizID)
+		if err != nil {
+			tg.HandleError("error while getting quiz: "+err.Error(), chatID, "chat_id", chatID, "update_id", update.UpdateID)
+			return
+		}
+		msgText := generateQuizCompletionMessage(answers, quiz.Type)
 		msg := tgbotapi.NewMessage(chatID, msgText)
 		msg.ParseMode = "Markdown"
 		if _, err := tg.bot.Send(msg); err != nil {
@@ -393,8 +473,19 @@ func (tg *TelegramClient) sendQuestion(question types.IQuestion, uid, chatID int
 			photo.ParseMode = "Markdown"
 			photo.Caption = q.Question
 			markup := tgbotapi.InlineKeyboardMarkup{}
+
+			answer, err := tg.service.GetAnswer(uid, question.GetID())
+			if err != nil {
+				tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
+				return
+			}
+
 			for _, opt := range q.Options {
-				btn := tgbotapi.NewInlineKeyboardButtonData(opt, opt)
+				text := opt
+				if slices.Contains(answer.Answer, opt) {
+					text = "✅" + text
+				}
+				btn := tgbotapi.NewInlineKeyboardButtonData(text, opt)
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{btn})
 			}
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData("Дать ответ", "Следующий вопрос➡")})
@@ -404,11 +495,22 @@ func (tg *TelegramClient) sendQuestion(question types.IQuestion, uid, chatID int
 			msg := tgbotapi.NewMessage(chatID, q.Question)
 			msg.ParseMode = "Markdown"
 			markup := tgbotapi.InlineKeyboardMarkup{}
+
+			answer, err := tg.service.GetAnswer(uid, question.GetID())
+			if err != nil {
+				tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
+				return
+			}
+
 			for _, opt := range q.Options {
-				fmt.Println(opt)
-				btn := tgbotapi.NewInlineKeyboardButtonData(opt, opt)
+				text := opt
+				if slices.Contains(answer.Answer, opt) {
+					text = "✅" + text
+				}
+				btn := tgbotapi.NewInlineKeyboardButtonData(text, opt)
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{btn})
 			}
+
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData("Дать ответ", "Следующий вопрос➡")})
 			msg.ReplyMarkup = &markup
 			newQuestion = msg
@@ -421,29 +523,34 @@ func (tg *TelegramClient) sendQuestion(question types.IQuestion, uid, chatID int
 	}
 }
 
-func generateQuizCompletionMessage(answers []types.Answer) string {
+func generateQuizCompletionMessage(answers []types.Answer, quizType string) string {
 	fmt.Println(answers)
-	result := "Отлично, квиз пройден. Вот твои результаты:\n\n"
-	for _, answer := range answers {
+	if quizType == "quiz" {
+		result := "Отлично, квиз пройден. Вот твои результаты:\n\n"
+		for _, answer := range answers {
 
-		your := ""
-		for _, v := range answer.Answer {
-			your += fmt.Sprintf("%s,", v)
-		}
-		your = your[:len(your)-1]
+			your := ""
+			for _, v := range answer.Answer {
+				your += fmt.Sprintf("%s,", v)
+			}
+			your = your[:len(your)-1]
 
-		result += fmt.Sprintf("Ваш ответ: %s\n", your)
-		correct := ""
-		for _, v := range answer.Correct {
-			correct += fmt.Sprintf("%s,", v)
+			result += fmt.Sprintf("Ваш ответ: %s\n", your)
+			correct := ""
+			for _, v := range answer.Correct {
+				correct += fmt.Sprintf("%s,", v)
+			}
+			correct = correct[:len(correct)-1]
+			result += fmt.Sprintf("Правильный ответ: %s\n", correct)
+			if answer.IsCorrect {
+				result += fmt.Sprintf("Ответ верный✅\n\n")
+			} else {
+				result += fmt.Sprintf("Ответ неверный❌\n\n")
+			}
 		}
-		correct = correct[:len(correct)-1]
-		result += fmt.Sprintf("Правильный ответ: %s\n", correct)
-		if answer.IsCorrect {
-			result += fmt.Sprintf("Ответ верный✅\n\n")
-		} else {
-			result += fmt.Sprintf("Ответ неверный❌\n\n")
-		}
+		return result
+	} else {
+		return "Спасибо за уделенное время, ваши денные были сохранены)"
 	}
-	return result
+
 }

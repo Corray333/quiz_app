@@ -24,14 +24,21 @@ type Storage interface {
 	GetQuiz(id int64) (*types.Quiz, error)
 	SetAnswer(newAnswer *types.Answer) (*types.Answer, error)
 	GetFirstQuestion(quizID int64) (types.IQuestion, error)
+	UpdateQuiz(quiz *types.Quiz) error
 
 	CreateUser(user *types.User) (int64, error)
 	SetCurrentQuestion(uid, qid int64) error
 	GetCurrentQuestion(uid int64) (types.IQuestion, error)
 	GetNextQuestion(uid int64) (types.IQuestion, error)
 	GetAnswers(userID int64, quizID int64) ([]types.Answer, error)
-	GetQuizAnswers(userID int64) ([]types.Answer, error)
-	GetAllAnswers(quizID int64, offset int) ([]types.Answer, error)
+	GetUserAnswers(userID int64) ([]types.Answer, error)
+	GetQuizAnswers(quizID int64, offset int) ([]types.Answer, error)
+	GetAnswer(uid int64, qid int64) (*types.Answer, error)
+
+	CreateAdmin(username string) error
+	IsAdminById(id int64) (bool, error)
+	GetAdmins() ([]types.Admin, error)
+	DeleteAdmin(id int64) error
 }
 
 type service struct {
@@ -83,4 +90,8 @@ func (s *service) GetCurrentQuestion(uid int64) (types.IQuestion, error) {
 
 func (s *service) GetNextQuestion(uid int64) (types.IQuestion, error) {
 	return s.repo.GetNextQuestion(uid)
+}
+
+func (s *service) UpdateQuiz(quiz *types.Quiz) error {
+	return s.repo.UpdateQuiz(quiz)
 }

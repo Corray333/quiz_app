@@ -276,7 +276,7 @@ func (s Server) GetAnswers() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		answers, err := s.service.GetAllAnswers(id, offset)
+		answers, err := s.service.GetQuizAnswers(id, offset)
 		if err != nil {
 			slog.Error("get answers error: " + err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -288,5 +288,62 @@ func (s Server) GetAnswers() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
+}
+
+func (s Server) UpdateQuiz() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var req CreateQuizRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		quiz := &types.Quiz{
+			Title:       req.Title,
+			Description: req.Description,
+			CreatedAt:   req.CreatedAt,
+			Cover:       req.Cover,
+			Type:        req.Type,
+			Questions:   req.Questions,
+		}
+		err := s.service.UpdateQuiz(quiz)
+		if err != nil {
+			slog.Error("update quiz error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func (s Server) LogIn() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		uidStr, ok := r.Context().Value(types.ContextKey("uid")).(string)
+		if !ok {
+			http.Error(w, "uid not found", http.StatusInternalServerError)
+			return
+		}
+
+		uid, err := strconv.ParseInt(uidStr, 10, 64)
+
+		ok, err = s.service.IsAdminById(uid)
+		if err != nil {
+			slog.Error("is admin error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if !ok {
+			http.Error(w, "user is not admin", http.StatusUnauthorized)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+
 	}
 }

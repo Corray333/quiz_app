@@ -15,7 +15,7 @@ const (
 )
 
 const (
-	QuizTypePoll = "poll"
+	QuizTypeForm = "form"
 	QuizTypeQuiz = "quiz"
 )
 
@@ -110,5 +110,13 @@ type Answer struct {
 	AnswerRaw  json.RawMessage `json:"-" db:"answer"`
 	Correct    []string        `json:"correct,omitempty"`
 	Checked    bool            `json:"checked" db:"checked"`
-	IsCorrect  bool            `json:"isCorrect" db:"is_correct"`
+	Question   string          `json:"question"`
+	IsCorrect  bool            `json:"isCorrect"`
+}
+
+type ContextKey string
+
+type Admin struct {
+	TgID     int64  `json:"tgID" db:"tg_id"`
+	Username string `json:"username" db:"username"`
 }

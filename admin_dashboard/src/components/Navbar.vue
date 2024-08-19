@@ -27,12 +27,12 @@ const showModal = ref(false)
             <li>
                 <RouterLink to="/quizzes">{{ $t('navbar.quizzes') }}</RouterLink>
             </li>
-            <li>
+            <!-- <li>
                 <RouterLink to="/answers">{{ $t('navbar.answers') }}</RouterLink>
             </li>
             <li>
                 <RouterLink to="/stats">{{ $t('navbar.stats') }}</RouterLink>
-            </li>
+            </li> -->
         </ul>
         <button @click="showModal = true" class=" p-2 bg-white text-accent rounded-full">
             <Icon icon="ph:plus" class=" text-xl" />

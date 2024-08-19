@@ -32,8 +32,14 @@ type Service interface {
 	ListQuizzes(offset int) ([]types.Quiz, error)
 	GetQuiz(id int64) (*types.Quiz, error)
 	GetAnswers(userID int64, quizID int64) ([]types.Answer, error)
-	GetQuizAnswers(userID int64) ([]types.Answer, error)
-	GetAllAnswers(quiz_id int64, offset int) ([][]types.Answer, error)
+	GetUserAnswers(userID int64) ([]types.Answer, error)
+	GetQuizAnswers(quiz_id int64, offset int) ([][]types.Answer, error)
+	UpdateQuiz(quiz *types.Quiz) error
+
+	CreateAdmin(username string) error
+	IsAdminById(id int64) (bool, error)
+	GetAdmins() ([]types.Admin, error)
+	DeleteAdmin(id int64) error
 }
 
 type Server struct {
@@ -62,6 +68,7 @@ func NewServer(service Service) *Server {
 
 	router.Get("/api/swagger/*", httpSwagger.WrapHandler)
 	router.Post("/api/quizzes", server.CreateQuiz())
+	router.Patch("/api/quizzes", server.UpdateQuiz())
 	router.Post("/api/quizzes/{quiz_id}/questions", server.CreateQuestion())
 	router.Get("/api/questions/{quiz_id}", server.GetQuestion())
 	router.Get("/api/quizzes", server.ListQuizzes())

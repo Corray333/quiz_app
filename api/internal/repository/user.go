@@ -124,7 +124,7 @@ func (s *repository) SetAnswer(newAnswer *types.Answer) (*types.Answer, error) {
 		return nil, err
 	}
 	fmt.Println(string(answerStr))
-	_, err = s.db.Exec("UPDATE answers SET answer = $3 WHERE user_id = $1 AND question_id = $2", newAnswer.UserID, newAnswer.QuestionID, string(answerStr))
+	_, err = s.db.Exec("UPDATE answers SET answer = $3, checked = false WHERE user_id = $1 AND question_id = $2", newAnswer.UserID, newAnswer.QuestionID, string(answerStr))
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +132,19 @@ func (s *repository) SetAnswer(newAnswer *types.Answer) (*types.Answer, error) {
 	newAnswer.Answer = ans.Answer
 
 	return newAnswer, nil
+}
+
+func (r repository) GetAnswer(uid int64, qid int64) (*types.Answer, error) {
+	ans := &types.Answer{}
+	if err := r.db.Get(ans, "SELECT * FROM answers WHERE user_id = $1 AND question_id = $2", uid, qid); err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(ans.AnswerRaw, &ans.Answer); err != nil {
+		return nil, err
+	}
+
+	return ans, nil
 }
 
 func (r repository) GetNextQuestion(uid int64) (types.IQuestion, error) {
@@ -183,5 +196,45 @@ func (r repository) GetNextQuestion(uid int64) (types.IQuestion, error) {
 	}
 
 	return result, nil
+
+}
+
+func (r repository) CreateAdmin(username string) error {
+	_, err := r.db.Exec("INSERT INTO admins(username) VALUES($1)", username)
+	if err != nil {
+		return fmt.Errorf("failed to create admin: %v", err)
+	}
+
+	return nil
+
+}
+
+func (r repository) IsAdminById(id int64) (bool, error) {
+	count := 0
+	r.db.Get(&count, "SELECT COUNT(*) FROM admins WHERE tg_id = $1", id)
+	if count == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (r repository) GetAdmins() ([]types.Admin, error) {
+	admins := []types.Admin{}
+	if err := r.db.Select(&admins, "SELECT * FROM admins"); err != nil {
+		return nil, err
+	}
+
+	return admins, nil
+
+}
+
+func (r repository) DeleteAdmin(id int64) error {
+	_, err := r.db.Exec("DELETE FROM admins WHERE tg_id = $1", id)
+	if err != nil {
+		return fmt.Errorf("failed to delete admin: %v", err)
+	}
+
+	return nil
 
 }
