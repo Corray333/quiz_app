@@ -1,0 +1,24 @@
+{
+    "navbar":{
+        "quizzes":"Квизы",
+        "answers":"Ответы",
+        "stats":"Статистика",
+        "newForm":"Новая форма",
+        "newQuiz":"Новый квиз"
+    },
+    "quizCard":{
+        "newAnswers":"новых"
+    },
+    "createQuiz":{
+      "createQuiz":"Создать",
+      "updateQuiz":"Обновить",
+      "newQuestion":"Новый вопрос",
+      "imageUrl":"Ссылка на изображение",
+      "questionTypes":{
+        "textQuestion":"Ответ текстом",
+        "selectQuestion":"Ответ с выбором",
+        "multiSelectQuestion":"Ответ с множественным выбором",
+        "fileQuestion":"Ответ с файлом"
+      }
+    }
+}

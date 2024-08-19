@@ -1,0 +1,24 @@
+{
+  "navbar": {
+    "quizzes": "Quizzes",
+    "answers": "Answers",
+    "stats": "Stats",
+    "newForm": "New form",
+    "newQuiz": "New quiz"
+  },
+  "quizCard": {
+    "newAnswers": "new"
+  },
+  "createQuiz": {
+    "createQuiz": "Create",
+    "updateQuiz":"Create",
+    "newQuestion": "New question",
+    "imageUrl": "Image url",
+    "questionTypes": {
+      "textQuestion": "Text",
+      "selectQuestion": "Select",
+      "multiSelectQuestion": "Multi select",
+      "fileQuestion": "File"
+    }
+  }
+}
