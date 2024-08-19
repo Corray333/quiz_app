@@ -5,14 +5,12 @@ import { ref, onBeforeMount } from 'vue'
 declare const Telegram: any
 
 const authorized = ref<boolean>(false)
-const test = ref<string>("")
 
 onBeforeMount(() => {
   if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
     const tg = Telegram.WebApp;
     const user = tg.initDataUnsafe.user;
 
-    test.value = tg.initData
 
     if (user) {
       if (user.username == "incetro" || user.username == "corray9") authorized.value=true

@@ -231,8 +231,12 @@ func (tg *TelegramClient) welcomeToQuiz(user *types.User, update *tgbotapi.Updat
 
 			answer, err := tg.service.GetAnswer(uid, question.GetID())
 			if err != nil {
-				tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
-				return
+				if err == sql.ErrNoRows {
+					answer = &types.Answer{}
+				} else {
+					tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
+					return
+				}
 			}
 
 			for _, opt := range q.Options {
@@ -253,8 +257,12 @@ func (tg *TelegramClient) welcomeToQuiz(user *types.User, update *tgbotapi.Updat
 
 			answer, err := tg.service.GetAnswer(uid, question.GetID())
 			if err != nil {
-				tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
-				return
+				if err == sql.ErrNoRows {
+					answer = &types.Answer{}
+				} else {
+					tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
+					return
+				}
 			}
 
 			for _, opt := range q.Options {
@@ -476,8 +484,12 @@ func (tg *TelegramClient) sendQuestion(question types.IQuestion, uid, chatID int
 
 			answer, err := tg.service.GetAnswer(uid, question.GetID())
 			if err != nil {
-				tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
-				return
+				if err == sql.ErrNoRows {
+					answer = &types.Answer{}
+				} else {
+					tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
+					return
+				}
 			}
 
 			for _, opt := range q.Options {
@@ -498,8 +510,12 @@ func (tg *TelegramClient) sendQuestion(question types.IQuestion, uid, chatID int
 
 			answer, err := tg.service.GetAnswer(uid, question.GetID())
 			if err != nil {
-				tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
-				return
+				if err == sql.ErrNoRows {
+					answer = &types.Answer{}
+				} else {
+					tg.HandleError("error while getting answer: "+err.Error(), chatID, "chat_id", chatID)
+					return
+				}
 			}
 
 			for _, opt := range q.Options {
