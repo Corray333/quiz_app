@@ -29,6 +29,7 @@ onBeforeMount(() => {
 <template>
   <section class=" bg-light min-h-screen pt-14">
     <Navbar />
+    <h1>{{ test }}</h1>
 
     <RouterView />
   </section>
