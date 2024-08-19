@@ -10,6 +10,14 @@ defineProps<{
     quiz: Quiz
 }>()
 
+const openLink = (link: string) => {
+    window.open(link)
+}
+
+const removeQuiz = async ()=>{
+
+}
+
 </script>
 
 <template>
@@ -24,13 +32,17 @@ defineProps<{
                     <span v-else-if="quiz.newAnswers >= 3">🔥</span>
                     {{ quiz.newAnswers }} {{ $t("quizCard.newAnswers") }}
                 </span>
-                <a :href="'https://t.me/incetro_quiz_bot?start='+quiz.id"
+                <button @click="openLink('https://t.me/incetro_quiz_bot?start=' + quiz.id)"
                     class=" text-xl bg-white rounded-full text-accent aspect-square">
                     <Icon icon="ph:link" />
-                </a>
+                </button>
                 <button @click="router.push('/quizzes/' + quiz.id)"
                     class=" text-xl bg-white rounded-full text-accent aspect-square">
                     <Icon icon="ph:pen-light" />
+                </button>
+                <button @click="removeQuiz"
+                    class=" text-xl bg-white rounded-full text-accent aspect-square">
+                    <Icon icon="ph:trash" />
                 </button>
             </div>
             <div>
