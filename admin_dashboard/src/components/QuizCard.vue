@@ -10,8 +10,8 @@ defineProps<{
     quiz: Quiz
 }>()
 
-const openLink = (link: string) => {
-    window.open(link)
+const copyLink = (link: string) => {
+    navigator.clipboard.writeText(link)
 }
 
 const removeQuiz = async ()=>{
@@ -32,7 +32,7 @@ const removeQuiz = async ()=>{
                     <span v-else-if="quiz.newAnswers >= 3">🔥</span>
                     {{ quiz.newAnswers }} {{ $t("quizCard.newAnswers") }}
                 </span>
-                <button @click="openLink('https://t.me/incetro_quiz_bot?start=' + quiz.id)"
+                <button @click="copyLink('https://t.me/incetro_quiz_bot?start=' + quiz.id)"
                     class=" text-xl bg-white rounded-full text-accent aspect-square">
                     <Icon icon="ph:link" />
                 </button>
