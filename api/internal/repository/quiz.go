@@ -77,6 +77,14 @@ func (s *repository) UpdateQuiz(quiz *types.Quiz) error {
 
 }
 
+func (s *repository) DeleteQuiz(id int64) error {
+	_, err := s.db.Exec("DELETE FROM quizzes WHERE quiz_id = $1", id)
+	if err != nil {
+		return fmt.Errorf("error deleting quiz: %w", err)
+	}
+	return nil
+}
+
 func (s *repository) CreateQuestion(question *types.Question) (int64, error) {
 	res := s.db.QueryRow("INSERT INTO questions (quiz_id, data, type) VALUES ($1, $2, $3) RETURNING question_id", question.QuizID, question.Data, question.Type)
 	if err := res.Scan(&question.ID); err != nil {

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS admins(
     username TEXT NOT NULL PRIMARY KEY
 );
 INSERT INTO admins(tg_id, username) VALUES(56218566, 'incetro');
+INSERT INTO admins(tg_id, username) VALUES(377742748, 'corray9');
 -- +goose StatementEnd
 
 -- +goose Down

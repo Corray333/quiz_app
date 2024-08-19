@@ -7,6 +7,10 @@ import { Quiz, Question, QuestionText, QuestionSelect, QuestionMultiSelect } fro
 const route = useRoute()
 const router = useRouter()
 
+
+const quizID = parseInt(route.params.quiz_id.toString())
+console.log(quizID)
+
 const showModal = ref<boolean>(false)
 
 const getQuiz = async ()=>{

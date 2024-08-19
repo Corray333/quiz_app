@@ -2,11 +2,12 @@
 import { Icon } from '@iconify/vue'
 import { Quiz } from '@/types/types'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 
 
-defineProps<{
+const props = defineProps<{
     quiz: Quiz
 }>()
 
@@ -15,7 +16,13 @@ const copyLink = (link: string) => {
 }
 
 const removeQuiz = async ()=>{
-
+    try {
+        await axios.delete(`${import.meta.env.VITE_API_URL}/quizzes/${props.quiz.id}`)
+        location.reload()
+    } catch (error) {
+        console.log(error)
+        alert("Не удалось удалить квиз(")
+    }
 }
 
 </script>

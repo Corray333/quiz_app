@@ -25,6 +25,7 @@ type Storage interface {
 	SetAnswer(newAnswer *types.Answer) (*types.Answer, error)
 	GetFirstQuestion(quizID int64) (types.IQuestion, error)
 	UpdateQuiz(quiz *types.Quiz) error
+	DeleteQuiz(id int64) error
 
 	CreateUser(user *types.User) (int64, error)
 	SetCurrentQuestion(uid, qid int64) error
@@ -58,6 +59,10 @@ func (s *service) CreateQuiz(quiz *types.Quiz) (int64, error) {
 	// quiz.Cover = strings.TrimPrefix(quiz.Cover, viper.GetString("image_url"))
 
 	return s.repo.CreateQuiz(quiz)
+}
+
+func (s *service) DeleteQuiz(id int64) error {
+	return s.repo.DeleteQuiz(id)
 }
 
 func (s *service) CreateQuestion(question *types.Question) (int64, error) {

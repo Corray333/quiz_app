@@ -26,13 +26,8 @@ type User struct {
 	Email           string          `json:"email" db:"email"`
 	Phone           string          `json:"phone" db:"phone"`
 	Password        string          `json:"password" db:"password"`
-	Role            string          `json:"role" db:"role"`
 	Data            json.RawMessage `json:"data" db:"data"`
 	CurrentQuestion int64           `json:"currentQuestion" db:"current_question"`
-}
-
-func (u *User) IsAdmin() bool {
-	return u.Role == RoleAdmin
 }
 
 type Quiz struct {

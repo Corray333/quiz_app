@@ -56,6 +56,11 @@ type Service interface {
 	GetAnswers(userID int64, quizID int64) ([]types.Answer, error)
 	GetUserAnswers(userID int64) ([]types.Answer, error)
 	GetAnswer(uid, qid int64) (*types.Answer, error)
+
+	CreateAdmin(username string) error
+	IsAdminById(id int64) (bool, error)
+	GetAdmins() ([]types.Admin, error)
+	DeleteAdmin(id int64) error
 }
 
 func NewClient(token string, service Service) *TelegramClient {
@@ -120,8 +125,19 @@ func (tg *TelegramClient) Run() {
 			}
 		}
 
+		isAdmin, err := tg.service.IsAdminById(update.FromChat().ID)
+		if err != nil {
+			tg.HandleError("error while checking if user is admin: "+err.Error(), update.FromChat().ID, "update_id", update.UpdateID)
+			continue
+
+		}
+
+		fmt.Println()
+		fmt.Println(isAdmin)
+		fmt.Println()
+
 		switch {
-		case user.IsAdmin():
+		case isAdmin:
 			tg.handleAdminUpdate(user, update)
 			continue
 		default:
@@ -148,7 +164,15 @@ func (tg *TelegramClient) handleUserUpdate(user *types.User, update *tgbotapi.Up
 }
 
 func (tg *TelegramClient) handleAdminUpdate(user *types.User, update tgbotapi.Update) {
-
+	msg := tgbotapi.NewMessage(update.FromChat().ID, "Привет. Чтобы настроить квизы, войди в админку: ")
+	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
+		[]tgbotapi.InlineKeyboardButton{
+			tgbotapi.NewInlineKeyboardButtonURL("Войти в админку", "https://t.me/incetro_quiz_bot/admin"),
+		},
+	)
+	if _, err := tg.bot.Send(msg); err != nil {
+		tg.HandleError("error while sending message: "+err.Error(), update.FromChat().ID, "update_id", update.UpdateID)
+	}
 }
 
 func (tg *TelegramClient) welcomeToQuiz(user *types.User, update *tgbotapi.Update) {

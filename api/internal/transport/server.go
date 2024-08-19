@@ -35,6 +35,7 @@ type Service interface {
 	GetUserAnswers(userID int64) ([]types.Answer, error)
 	GetQuizAnswers(quiz_id int64, offset int) ([][]types.Answer, error)
 	UpdateQuiz(quiz *types.Quiz) error
+	DeleteQuiz(id int64) error
 
 	CreateAdmin(username string) error
 	IsAdminById(id int64) (bool, error)
@@ -73,8 +74,10 @@ func NewServer(service Service) *Server {
 	router.Get("/api/questions/{quiz_id}", server.GetQuestion())
 	router.Get("/api/quizzes", server.ListQuizzes())
 	router.Get("/api/quizzes/{quiz_id}/answers", server.GetAnswers())
+	router.Delete("/api/quizzes/{quiz_id}", server.DeleteQuiz())
 	router.Get("/api/quizzes/{quiz_id}", server.GetQuiz())
 	router.Post("/api/upload/image", server.UploadImage())
+	router.Get("/api/login", server.LogIn())
 
 	fs := http.FileServer(http.Dir("../files/images"))
 	router.Handle("/api/images/*", http.StripPrefix("/api/images", fs))

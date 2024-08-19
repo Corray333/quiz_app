@@ -11,6 +11,7 @@ import (
 )
 
 type CreateQuizRequest struct {
+	ID          int64             `json:"id" db:"id"`
 	Title       string            `json:"title" db:"title"`
 	Description string            `json:"description,omitempty" db:"description"`
 	CreatedAt   int64             `json:"createdAt" db:"created_at"`
@@ -302,6 +303,7 @@ func (s Server) UpdateQuiz() http.HandlerFunc {
 		}
 
 		quiz := &types.Quiz{
+			ID:          req.ID,
 			Title:       req.Title,
 			Description: req.Description,
 			CreatedAt:   req.CreatedAt,
@@ -345,5 +347,25 @@ func (s Server) LogIn() http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 
+	}
+}
+
+func (s Server) DeleteQuiz() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		quizIDStr := chi.URLParam(r, "quiz_id")
+		quizID, err := strconv.ParseInt(quizIDStr, 10, 64)
+
+		if err != nil {
+			slog.Error("delete quiz error: " + err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := s.service.DeleteQuiz(quizID); err != nil {
+			slog.Error("delete quiz error: " + err.Error())
+		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
