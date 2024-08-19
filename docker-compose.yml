@@ -14,14 +14,6 @@ services:
     depends_on:
       - db
   
-  app:  
-    image: node:latest
-    command: npm run dev
-    volumes:
-      - ./admin_dashboard:/app
-    working_dir: /app
-    environment:
-      - HOST=0.0.0.0
   
 
   db:
