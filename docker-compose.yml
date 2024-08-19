@@ -13,6 +13,16 @@ services:
     command: make run
     depends_on:
       - db
+  
+  app:  
+    image: node:latest
+    command: npm run dev
+    volumes:
+      - ./admin_dashboard:/app
+    working_dir: /app
+    environment:
+      - HOST=0.0.0.0
+  
 
   db:
     image: postgres
@@ -22,3 +32,23 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - 5432:5432
+  
+  nginx:
+    image: nginx:latest
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - api
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 6h & wait $${!}; certbot renew; done"  
