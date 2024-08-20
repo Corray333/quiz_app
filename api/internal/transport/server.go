@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Corray333/quiz/internal/types"
+	"github.com/Corray333/quiz/pkg/server/auth"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -58,14 +59,17 @@ func NewServer(service Service) *Server {
 	router.Use(middleware.Logger)
 	router.Use(middleware.RequestID)
 
-	// TODO: get allowed origins, headers and methods from cfg
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedOrigins:   []string{"http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Set-Cookie", "Refresh", "X-CSRF-Token"},
 		AllowCredentials: true,
 		MaxAge:           300, // Максимальное время кеширования предзапроса (в секундах)
 	}))
+
+	router.Use(auth.NewAuthMiddleware(service))
+
+	// TODO: get allowed origins, headers and methods from cfg
 
 	router.Get("/api/swagger/*", httpSwagger.WrapHandler)
 	router.Post("/api/quizzes", server.CreateQuiz())

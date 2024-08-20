@@ -3,15 +3,29 @@ import QuizCard from '../components/QuizCard.vue'
 import {Quiz} from '../types/types'
 import {ref, onBeforeMount} from 'vue'
 import axios from 'axios'
+declare const Telegram: any
 
 const quizzes = ref<Quiz[]>([])
 
 onBeforeMount(async ()=>{
+  let initData = ""
+
+  if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+    const tg = Telegram.WebApp;
+    initData = tg.initData;
+  } else{
+    return
+  }
+
   try {
-    let {data} = await axios.get(`${import.meta.env.VITE_API_URL}/quizzes`)
+    let {data} = await axios.get(`${import.meta.env.VITE_API_URL}/quizzes`, {
+      headers:{
+        Authorization: initData
+      }
+    })
     quizzes.value = data
   } catch (error) {
-    
+    console.log(error)
   }
 })
 

@@ -17,6 +17,9 @@ import (
 )
 
 func CheckTelegramAuth(initData string) (int64, bool) {
+	fmt.Println()
+	fmt.Println("Init data: ", initData)
+	fmt.Println()
 	parsedData, _ := url.QueryUnescape(initData)
 	chunks := strings.Split(parsedData, "&")
 	var dataPairs [][]string
@@ -66,15 +69,28 @@ func CheckTelegramAuth(initData string) (int64, bool) {
 	return user.ID, fmt.Sprintf("%x", dataCheck) == hash
 }
 
-func NewAuthMiddleware() func(next http.Handler) http.Handler {
+type AdminChecker interface {
+	IsAdminById(id int64) (bool, error)
+}
+
+func NewAuthMiddleware(checker AdminChecker) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		slog.Info("auth middleware enabled")
 
 		fn := func(w http.ResponseWriter, r *http.Request) {
+			fmt.Println()
+			fmt.Printf("Headers: %+v\n", r.Header)
+			fmt.Println("Authorization: ", r.Header.Get("Authorization"))
+			fmt.Println()
 			uid, ok := CheckTelegramAuth(r.Header.Get("Authorization"))
 			if !ok {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				slog.Error("Unauthorized: ", "auth_str", r.Header.Get("Authorization"))
+				return
+			}
+			if ok, err := checker.IsAdminById(uid); err != nil || !ok {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				slog.Error("Unauthorized: ", "uid", uid)
 				return
 			}
 			r = r.WithContext(context.WithValue(r.Context(), types.ContextKey("uid"), uid))
