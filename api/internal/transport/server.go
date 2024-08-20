@@ -152,13 +152,13 @@ func (s *Server) UploadImage() http.HandlerFunc {
 		}
 
 		fmt.Println()
-		fmt.Println("Filename: " + os.Getenv("BASE_URL") + "/api/files/images/" + fileName)
+		fmt.Println("Filename: " + os.Getenv("BASE_URL") + "/api/images/" + fileName)
 		fmt.Println()
 
 		if err := json.NewEncoder(w).Encode(struct {
 			URL string `json:"url"`
 		}{
-			URL: os.Getenv("BASE_URL") + "/api/files/images/" + fileName,
+			URL: os.Getenv("BASE_URL") + "/api/images/" + fileName,
 		}); err != nil {
 			slog.Error("error encoding or sending file name: " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
