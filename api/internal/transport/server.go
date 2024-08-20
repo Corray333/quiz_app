@@ -67,21 +67,21 @@ func NewServer(service Service) *Server {
 		MaxAge:           300, // Максимальное время кеширования предзапроса (в секундах)
 	}))
 
-	router.Use(auth.NewAuthMiddleware(service))
+	routerAdmin := router.With(auth.NewAuthMiddleware(service))
 
 	// TODO: get allowed origins, headers and methods from cfg
 
 	router.Get("/api/swagger/*", httpSwagger.WrapHandler)
-	router.Post("/api/quizzes", server.CreateQuiz())
-	router.Patch("/api/quizzes", server.UpdateQuiz())
-	router.Post("/api/quizzes/{quiz_id}/questions", server.CreateQuestion())
-	router.Get("/api/questions/{quiz_id}", server.GetQuestion())
-	router.Get("/api/quizzes", server.ListQuizzes())
-	router.Get("/api/quizzes/{quiz_id}/answers", server.GetAnswers())
-	router.Delete("/api/quizzes/{quiz_id}", server.DeleteQuiz())
-	router.Get("/api/quizzes/{quiz_id}", server.GetQuiz())
-	router.Post("/api/upload/image", server.UploadImage())
-	router.Get("/api/login", server.LogIn())
+	routerAdmin.Post("/api/quizzes", server.CreateQuiz())
+	routerAdmin.Patch("/api/quizzes", server.UpdateQuiz())
+	routerAdmin.Post("/api/quizzes/{quiz_id}/questions", server.CreateQuestion())
+	routerAdmin.Get("/api/questions/{quiz_id}", server.GetQuestion())
+	routerAdmin.Get("/api/quizzes", server.ListQuizzes())
+	routerAdmin.Get("/api/quizzes/{quiz_id}/answers", server.GetAnswers())
+	routerAdmin.Delete("/api/quizzes/{quiz_id}", server.DeleteQuiz())
+	routerAdmin.Get("/api/quizzes/{quiz_id}", server.GetQuiz())
+	routerAdmin.Post("/api/upload/image", server.UploadImage())
+	routerAdmin.Get("/api/login", server.LogIn())
 
 	fs := http.FileServer(http.Dir("../files/images"))
 	router.Handle("/api/images/*", http.StripPrefix("/api/images", fs))
