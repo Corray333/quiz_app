@@ -63,8 +63,7 @@ const handleCoverUpload = async (event: Event) => {
 
   reader.onload = async () => {
     let fileName = await loadFile();
-    console.log(fileName)
-    quiz.value.cover = `${import.meta.env.VITE_API_URL}${fileName}`
+    quiz.value.cover = fileName
   };
 
   reader.readAsDataURL(file.value);
@@ -88,7 +87,7 @@ const handleQuestionImageUpload = async (question: Question, event: Event) => {
   reader.onload = async () => {
     let fileName = await loadFile();
     console.log(fileName)
-    question.image = `${import.meta.env.VITE_API_URL}${fileName}`
+    question.image = fileName
   };
 
   reader.readAsDataURL(file.value);
