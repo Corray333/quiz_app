@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue'
 import { Quiz } from '@/types/types'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+declare const Telegram: any
 
 const router = useRouter()
 
@@ -15,9 +16,21 @@ const copyLink = (link: string) => {
     navigator.clipboard.writeText(link)
 }
 
-const removeQuiz = async ()=>{
+const removeQuiz = async () => {
+    let initData = ""
+
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        const tg = Telegram.WebApp;
+        initData = tg.initData;
+    } else {
+        return
+    }
     try {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/quizzes/${props.quiz.id}`)
+        await axios.delete(`${import.meta.env.VITE_API_URL}/quizzes/${props.quiz.id}`, {
+            headers: {
+                Authorization: initData,
+            }
+        })
         location.reload()
     } catch (error) {
         console.log(error)
@@ -47,8 +60,7 @@ const removeQuiz = async ()=>{
                     class=" text-xl bg-white rounded-full text-accent aspect-square">
                     <Icon icon="ph:pen-light" />
                 </button>
-                <button @click="removeQuiz"
-                    class=" text-xl bg-white rounded-full text-accent aspect-square">
+                <button @click="removeQuiz" class=" text-xl bg-white rounded-full text-accent aspect-square">
                     <Icon icon="ph:trash" />
                 </button>
             </div>

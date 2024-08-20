@@ -2,6 +2,7 @@
 import axios from 'axios'
 import { useRoute } from 'vue-router'
 import { onBeforeMount, ref } from 'vue'
+declare const Telegram: any
 
 const route = useRoute()
 
@@ -16,10 +17,22 @@ class Answer {
 const answers = ref<Answer[][]>()
 
 const getAnswers = async ()=>{
+  let initData = ""
+
+  if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+    const tg = Telegram.WebApp;
+    initData = tg.initData;
+  } else{
+    return
+  }
   let quizID = route.params.quiz_id
   console.log(quizID)
   try {
-    const {data} = await axios.get(`${import.meta.env.VITE_API_URL}/quizzes/${route.params.quiz_id}/answers`)
+    const {data} = await axios.get(`${import.meta.env.VITE_API_URL}/quizzes/${route.params.quiz_id}/answers`, {
+      headers:{
+        Authorization: initData
+      }
+    })
     answers.value = data
   } catch (error) {
     console.log(error)

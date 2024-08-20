@@ -3,6 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ref, onBeforeMount } from 'vue'
 import axios from 'axios'
 import { Quiz, Question, QuestionText, QuestionSelect, QuestionMultiSelect } from '@/types/types'
+declare const Telegram: any
 
 const route = useRoute()
 const router = useRouter()
@@ -13,16 +14,28 @@ console.log(quizID)
 
 const showModal = ref<boolean>(false)
 
-const getQuiz = async ()=>{
+const getQuiz = async () => {
+  let initData = ""
+
+  if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+    const tg = Telegram.WebApp;
+    initData = tg.initData;
+  } else {
+    return
+  }
   try {
-    const {data} = await axios.get(`${import.meta.env.VITE_API_URL}/quizzes/${route.params.quiz_id}`)
+    const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/quizzes/${route.params.quiz_id}`, {
+      headers: {
+        Authorization: initData
+      }
+    })
     quiz.value = data
   } catch (error) {
     console.log(error)
   }
 }
 
-onBeforeMount(()=>{
+onBeforeMount(() => {
   getQuiz()
 })
 
@@ -40,11 +53,23 @@ const quiz = ref<Quiz>({
 const file = ref<Blob>(new Blob())
 
 const loadFile = async () => {
+  let initData = ""
+
+  if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+    const tg = Telegram.WebApp;
+    initData = tg.initData;
+  } else {
+    return
+  }
   try {
     let formData = new FormData()
     formData.append('file', file.value)
 
-    let { data } = await axios.post(`${import.meta.env.VITE_API_URL}/upload/image`, formData)
+    let { data } = await axios.post(`${import.meta.env.VITE_API_URL}/upload/image`, formData, {
+      headers: {
+        Authorization: initData
+      }
+    })
     return data.url
   } catch (err) {
     console.log(err)
@@ -107,9 +132,9 @@ const updateTextQuestionAnswer = (question: Question, input: HTMLInputElement) =
 
 const updateSelectQuestionAnswer = (question: Question, id: number, input: HTMLInputElement) => {
   let q = question as QuestionSelect
-  let ind = q.answer.indexOf(q.options[id]) 
+  let ind = q.answer.indexOf(q.options[id])
   q.options[id] = input.value
-  if (ind != -1){
+  if (ind != -1) {
     q.answer[ind] = input.value
   }
 }
@@ -118,7 +143,7 @@ const updateMultiSelectQuestionAnswer = (question: Question, id: number, input: 
   let q = question as QuestionMultiSelect
   let ind = q.answer.indexOf(q.options[id])
   q.options[id] = input.value
-  if (ind != -1){
+  if (ind != -1) {
     q.answer[ind] = input.value
   }
 }
@@ -156,7 +181,7 @@ const updateSelectAnswer = (question: Question, id: number) => {
 
 const updateMultiSelectAnswer = (question: Question, id: number, input: HTMLInputElement) => {
   let q = question as QuestionMultiSelect
-  const option = q.options[id]; 
+  const option = q.options[id];
   if (input.checked) {
     if (!q.answer.includes(option)) {
       q.answer.push(option);
@@ -170,9 +195,21 @@ const updateMultiSelectAnswer = (question: Question, id: number, input: HTMLInpu
 }
 
 const updateQuiz = async () => {
+  let initData = ""
+
+  if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+    const tg = Telegram.WebApp;
+    initData = tg.initData;
+  } else {
+    return
+  }
   try {
     console.log(JSON.stringify(quiz.value))
-    await axios.patch(`${import.meta.env.VITE_API_URL}/quizzes`, quiz.value)
+    await axios.patch(`${import.meta.env.VITE_API_URL}/quizzes`, quiz.value, {
+      headers: {
+        Authorization: initData
+      }
+    })
 
     router.push("/quizzes")
   } catch (error) {
@@ -193,18 +230,21 @@ const showCoverImageUrlModal = ref<boolean>(false)
 
 <template>
   <Transition>
-    <section v-if="showQuestionImageUrlModal" @click.self="showQuestionImageUrlModal = false" class=" fixed z-50 backdrop-blur-lg w-screen h-screen flex justify-center items-center">
+    <section v-if="showQuestionImageUrlModal" @click.self="showQuestionImageUrlModal = false"
+      class=" fixed z-50 backdrop-blur-lg w-screen h-screen flex justify-center items-center">
       <section class=" bg-white p-5 shadow-xl rounded-xl flex flex-col w-fit gap-2 ">
         <input v-model="newQuestionImageUrl" type="text" :placeholder="$t('createQuiz.imageUrl')">
-        <button @click="showQuestionImageUrlModal = false;quiz.questions[pickedQuestionID].image = newQuestionImageUrl">Добавить</button>
+        <button
+          @click="showQuestionImageUrlModal = false; quiz.questions[pickedQuestionID].image = newQuestionImageUrl">Добавить</button>
       </section>
     </section>
   </Transition>
   <Transition>
-    <section v-if="showCoverImageUrlModal" @click.self="showCoverImageUrlModal = false" class=" fixed z-50 backdrop-blur-lg w-screen h-screen flex justify-center items-center">
+    <section v-if="showCoverImageUrlModal" @click.self="showCoverImageUrlModal = false"
+      class=" fixed z-50 backdrop-blur-lg w-screen h-screen flex justify-center items-center">
       <section class=" bg-white p-5 shadow-xl rounded-xl flex flex-col w-fit gap-2 ">
         <input v-model="newCoverImageUrl" type="text" :placeholder="$t('createQuiz.imageUrl')">
-        <button @click="showCoverImageUrlModal = false;quiz.cover = newCoverImageUrl">Добавить</button>
+        <button @click="showCoverImageUrlModal = false; quiz.cover = newCoverImageUrl">Добавить</button>
       </section>
     </section>
   </Transition>
@@ -229,20 +269,22 @@ const showCoverImageUrlModal = ref<boolean>(false)
   </Transition>
   <section class=" p-5 flex flex-col gap-5 items-center">
     <div class="cover w-full relative">
-      <img :src="quiz.cover ? quiz.cover : 'https://avatars.mds.yandex.net/i?id=3078a886623d95405e521288e3f2ad36_l-4422999-images-thumbs&n=13'" alt="" class="w-full rounded-xl h-48 object-cover border-white">
+      <img
+        :src="quiz.cover ? quiz.cover : 'https://avatars.mds.yandex.net/i?id=3078a886623d95405e521288e3f2ad36_l-4422999-images-thumbs&n=13'"
+        alt="" class="w-full rounded-xl h-48 object-cover border-white">
     </div>
     <div class="image_buttons_row w-full flex gap-5">
-        <div class="w-full relative flex justify-center items-center bg-accent text-white py-2 rounded-md">
-          <input type="file" id="coverInput" class="hidden"
-            @change="handleCoverUpload($event)" />
-          <label for="coverInput"
-            class="text-center rounded-xl absolute mx-auto  bg-opacity-80 h-full w-full flex items-center justify-center cursor-pointer">
-          </label>
-          <p>Загрузить</p>
-        </div>
-
-        <button @click="showCoverImageUrlModal = true" class="w-full relative flex justify-center items-center bg-accent text-white py-2 rounded-md">По url</button>
+      <div class="w-full relative flex justify-center items-center bg-accent text-white py-2 rounded-md">
+        <input type="file" id="coverInput" class="hidden" @change="handleCoverUpload($event)" />
+        <label for="coverInput"
+          class="text-center rounded-xl absolute mx-auto  bg-opacity-80 h-full w-full flex items-center justify-center cursor-pointer">
+        </label>
+        <p>Загрузить</p>
       </div>
+
+      <button @click="showCoverImageUrlModal = true"
+        class="w-full relative flex justify-center items-center bg-accent text-white py-2 rounded-md">По url</button>
+    </div>
     <input v-model="quiz.title" type="text" placeholder="Название опроса"
       class=" w-full bg-transparent font-bold bg-white p-2 rounded-xl">
     <textarea v-model="quiz.description" type="text" placeholder="Описание опроса"
@@ -264,7 +306,8 @@ const showCoverImageUrlModal = ref<boolean>(false)
           <p>Загрузить</p>
         </div>
 
-        <button @click="pickedQuestionID = i; showQuestionImageUrlModal = true" class="w-full relative flex justify-center items-center bg-accent text-white py-2 rounded-md">По url</button>
+        <button @click="pickedQuestionID = i; showQuestionImageUrlModal = true"
+          class="w-full relative flex justify-center items-center bg-accent text-white py-2 rounded-md">По url</button>
       </div>
 
 
@@ -282,23 +325,22 @@ const showCoverImageUrlModal = ref<boolean>(false)
       <div v-if="question.type == 'select'">
         <div v-if="quiz.type == 'form'" class="flex flex-col gap-2">
           <input type="text" v-model="question.question" placeholder="Вопрос" class=" w-full p-2 rounded-md font-bold">
-          <input v-for="(opt, oid) of (question as QuestionSelect).options" :key="oid" type="text"  class="w-full rounded-md p-2"
+          <input v-for="(opt, oid) of (question as QuestionSelect).options" :key="oid" type="text"
+            class="w-full rounded-md p-2"
             @input="updateSelectQuestionAnswer(question, oid, $event.target as HTMLInputElement)"
-            @keydown.enter="newSelectOption(question)" @keydown.delete="deleteSelectOption(question, oid)"
-            :value="opt"
+            @keydown.enter="newSelectOption(question)" @keydown.delete="deleteSelectOption(question, oid)" :value="opt"
             :placeholder="`Вариант ${oid + 1}`">
         </div>
         <div v-if="quiz.type == 'quiz'" class="flex flex-col gap-2">
           <input type="text" v-model="question.question" placeholder="Вопрос" class=" w-full p-2 rounded-md font-bold">
           <div class="flex gap-2 items-center" v-for="(opt, oid) of (question as QuestionSelect).options" :key="oid">
-            <input :checked="question.answer.indexOf(opt) != -1" @input="updateSelectAnswer(question, oid)" id="bordered-radio-1" type="radio" value=""
-              :name="'selectQuestion' + i"
+            <input :checked="question.answer.indexOf(opt) != -1" @input="updateSelectAnswer(question, oid)"
+              id="bordered-radio-1" type="radio" value="" :name="'selectQuestion' + i"
               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
             <input type="text" class="w-full rounded-md p-2"
               @input="updateSelectQuestionAnswer(question, oid, $event.target as HTMLInputElement)"
               @keydown.enter="newSelectOption(question)" @keydown.delete="deleteSelectOption(question, oid)"
-              :value="opt"
-              :placeholder="`Вариант ${oid + 1}`">
+              :value="opt" :placeholder="`Вариант ${oid + 1}`">
           </div>
         </div>
       </div>
@@ -306,23 +348,23 @@ const showCoverImageUrlModal = ref<boolean>(false)
       <div v-if="question.type == 'multi_select'">
         <div v-if="quiz.type == 'form'" class="flex flex-col gap-2">
           <input type="text" v-model="question.question" placeholder="Вопрос" class=" w-full p-2 rounded-md font-bold">
-          <input v-for="(opt, oid) of (question as QuestionSelect).options" :key="oid" type="text" class="w-full rounded-md p-2"
+          <input v-for="(opt, oid) of (question as QuestionSelect).options" :key="oid" type="text"
+            class="w-full rounded-md p-2"
             @input="updateSelectQuestionAnswer(question, oid, $event.target as HTMLInputElement)"
             @keydown.enter="newMultiSelectOption(question)" @keydown.delete="deleteMultiSelectOption(question, oid)"
-            :value="opt"
-            :placeholder="`Вариант ${oid + 1}`">
+            :value="opt" :placeholder="`Вариант ${oid + 1}`">
         </div>
         <div v-if="quiz.type == 'quiz'" class="flex flex-col gap-2">
           <input type="text" v-model="question.question" placeholder="Вопрос" class=" w-full p-2 rounded-md font-bold">
           <div class="flex gap-2 items-center" v-for="(opt, oid) of (question as QuestionSelect).options" :key="oid">
-            <input :checked="question.answer.indexOf(opt) != -1" @input="updateMultiSelectAnswer(question, oid, $event.target as HTMLInputElement)"
-              id="checked-checkbox" type="checkbox"
+            <input :checked="question.answer.indexOf(opt) != -1"
+              @input="updateMultiSelectAnswer(question, oid, $event.target as HTMLInputElement)" id="checked-checkbox"
+              type="checkbox"
               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-0 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
             <input type="text" class="w-full rounded-md p-2"
               @input="updateMultiSelectQuestionAnswer(question, oid, $event.target as HTMLInputElement)"
               @keydown.enter="newMultiSelectOption(question)" @keydown.delete="deleteMultiSelectOption(question, oid)"
-              :value="opt"
-              :placeholder="`Вариант ${oid + 1}`">
+              :value="opt" :placeholder="`Вариант ${oid + 1}`">
           </div>
         </div>
       </div>
